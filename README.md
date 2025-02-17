@@ -59,8 +59,13 @@ ng version
 ng new your_project_name
 ```
 
-3) Start development server so you can see changes in real time: 
+4) Start development server so you can see changes in real time: 
 ```bash 
 ng serve
 ```
 *This will give you a localhost website you can access from any browser*
+
+## ***Learning Angular***
+Angular's website: [https://angular.dev](https://angular.dev) has all documentation on there.
+
+I suggest reading the documentation then going along the tutorial that their website also has - or some healthy mix of both.
