@@ -56,7 +56,7 @@ ng version
 ```
 3) Create new app: 
 ```bash
-ng new *name*
+ng new your_project_name
 ```
 
 3) Start development server so you can see changes in real time: 
