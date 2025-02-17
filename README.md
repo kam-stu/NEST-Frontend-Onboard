@@ -46,21 +46,21 @@ TypeScript is the primary language used in NEST. Follow these steps to install a
 Alternatively, just use VS code or whatever your normal code editor is.
 
 ## **Creating a project in Angular:**
-    1) Install angular: 
-    ```bash
-    npm install -g @angular/cli
-    ```
-    2) Verify it's installed: 
-    ```bash
-    ng version
-    ```
-    3) Create new app: 
-    ```bash
-    ng new *name*
-    ```
-    
-    3) Start development server so you can see changes in real time: 
-    ```bash 
-    ng serve
-    ```
-    *This will give you a localhost website you can access from any browser*
+1) Install angular: 
+```bash
+npm install -g @angular/cli
+```
+2) Verify it's installed: 
+```bash
+ng version
+```
+3) Create new app: 
+```bash
+ng new *name*
+```
+
+3) Start development server so you can see changes in real time: 
+```bash 
+ng serve
+```
+*This will give you a localhost website you can access from any browser*
