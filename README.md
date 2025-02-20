@@ -53,20 +53,20 @@ I suggest reading the documentation then going along the tutorial that their web
 
 ## **Creating a project in Angular:**
 1) Install angular: 
-```c
+```bash
 npm install -g @angular/cli
 ```
 2) Verify it's installed: 
-```c
+```bash
 ng version
 ```
 3) Create new app: 
-```c
+```bash
 ng new your_project_name
 ```
 
 4) Start development server so you can see changes in real time: 
-```c
+```bash
 ng serve
 ```
 *This will give you a localhost website you can access from any browser*
