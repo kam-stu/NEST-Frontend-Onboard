@@ -9,8 +9,9 @@ Welcome to the NEST Frontend Onboarding repository! This guide is designed to he
 - **GitHub**: For collaboration on larger projects.
 - **JavaScript/TypeScript**: The primary programming languages used in NEST.
 - **Angular**: The frontend framework for building the user interface.
+- **Python**: Used for the middleware of the website.
+- **Rust**: Used for backend development.
 - **Docker**: For containerization and deployment.
-- **Go**: Used for backend development.
 
 ---
 
@@ -52,20 +53,20 @@ I suggest reading the documentation then going along the tutorial that their web
 
 ## **Creating a project in Angular:**
 1) Install angular: 
-```bash
+```c
 npm install -g @angular/cli
 ```
 2) Verify it's installed: 
-```bash
+```c
 ng version
 ```
 3) Create new app: 
-```bash
+```c
 ng new your_project_name
 ```
 
 4) Start development server so you can see changes in real time: 
-```bash 
+```c
 ng serve
 ```
 *This will give you a localhost website you can access from any browser*
