@@ -1,0 +1,8 @@
+# Ignore compiled Rust binaries
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Ignore PostgreSQL database files
+pg_data/
+*.sql
