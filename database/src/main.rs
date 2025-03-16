@@ -1,3 +1,7 @@
+mod db;
+use db::connect;
+
+// tests the connection for database
 fn main() {
-    println!("Hello from main.rs!");
+    let _err = connect();
 }
