@@ -1,7 +1,11 @@
 mod db;
-use db::connect;
+use db::{connect, initalize_db};
 
-// tests the connection for database
-fn main() {
-    let _err = connect();
+#[tokio::main]
+async fn main() -> Result<(), sqlx::Error> {
+    // redundant pool; ignores the Result<PgPool> type error that db.connect() has at the moment
+    let pool = sqlx::PgPool::connect("postgres://root:root@localhost:5432/postgres").await?;
+    initalize_db(&pool).await?;
+
+    Ok(())
 }

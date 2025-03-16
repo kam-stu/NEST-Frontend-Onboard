@@ -1,5 +1,15 @@
-use sqlx::PgPool;
+use sqlx::{Executor, PgPool};
+use std::fs;
 use tokio::time::{timeout, Duration};
+
+struct User {
+    pub username: String,
+    pub password: String,
+}
+
+struct Task {
+
+}
 
 // this will later be moved to backend; just wanted to test the connection
 // without setting up the backend folder
@@ -30,6 +40,15 @@ pub async fn connect() -> Result<PgPool, sqlx::Error> {
     // here is other solution, but it hangs on connection timeout
     // keeps the PgPool type though...not entirely sure if that's necessary yet...
     /*
-        let pool = PgPool::conect(url).await?;
+        let pool = PgPool::connect(url).await?;
      */
+}
+
+pub async fn initalize_db(pool: &PgPool) -> Result<(), sqlx::Error> {
+    let schema = fs::read_to_string("./schema.sql")?;
+
+    pool.execute(schema.as_str()).await?;
+
+    println!("Database initialized successfully!");
+    Ok(())
 }
