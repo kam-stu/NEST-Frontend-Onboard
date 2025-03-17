@@ -58,19 +58,31 @@ pub async fn connect() -> Result<PgPool, sqlx::Error> {
 pub async fn initalize_db(pool: &PgPool) -> Result<(), sqlx::Error> {
     let schema = fs::read_to_string("./schema.sql")?;
 
-    pool.execute(schema.as_str()).await?;
-
-    println!("Database initialized successfully!");
-    Ok(())
+    match pool.execute(schema.as_str()).await {
+        Ok(_) => {
+            println!("Database initialized succeffully!");
+            Ok(())
+        }
+        Err(sqlx::Error::Database(db_err)) if db_err.code().as_deref() == Some("42P07") => {
+            println!("Database is alerady initialized.");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("Database initialization failed: {:?}", e);
+            Err(e)
+        }
+    }
 }
 
 // inserts a new user into the database and returns their uuid
 pub async fn write_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> {
-    sqlx::query_as::<_, User>(
+    sqlx::query(
         "INSERT INTO users (id, username, password_hashed)
-        VALUES ($1, $2, $3)
-        RETURNING id")
-        .bind(&user.id).bind(&user.username).bind(&user.password_hashed).fetch_one(pool).await?;
+        VALUES ($1, $2, $3)")
+        .bind(&user.id)
+        .bind(&user.username)
+        .bind(&user.password_hashed)
+        .execute(pool).await?;
 
     println!("User added successfully");
 
@@ -87,6 +99,17 @@ pub async fn query_user(pool: &PgPool, user_id: &Uuid) -> Result<(), sqlx::Error
     println!("The user is: {:?}", result);
 
     Ok(())
+}
+
+pub async fn get_user_uuid(pool: &PgPool, username: &String) -> Result<Uuid, sqlx::Error> {
+    let result: (Uuid,) = sqlx::query_as(
+        "SELECT id FROM users WHERE username=$1")
+        .bind(&username)
+        .fetch_one(pool)
+        .await?;
+
+        println!("User ID found successfully!");
+    Ok(result.0)
 }
 
 /* 

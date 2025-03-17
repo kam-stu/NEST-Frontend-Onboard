@@ -1,5 +1,5 @@
 mod db;
-use db::{User, Task, initalize_db, write_user, query_user};
+use db::{User, Task, initalize_db, write_user, query_user, get_user_uuid};
 use uuid::Uuid;
 
 #[tokio::main]
@@ -16,11 +16,15 @@ async fn main() -> Result<(), sqlx::Error> {
         username: String::from("Kam"),
         password_hashed: String::from("kam123")
     };
+    println!("Use created successfully");
     println!("====================== WRITING USER ======================");
     write_user(&pool, &user).await?;
 
+    println!("===================== FINDING USER_ID =====================");
+    let user_id = get_user_uuid(&pool, &user.username).await?;
+
     println!("====================== QUERYING USER ======================");
-    query_user(&pool, &user.id).await?;
+    query_user(&pool, &user_id).await?;
     
     Ok(())
 }
