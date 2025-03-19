@@ -1,30 +1,43 @@
 mod db;
-use db::{User, Task, initalize_db, write_user, query_user, get_user_uuid};
+use db::{connect, initalize_db, query_task, query_user, write_task, write_user, get_tasks, NewTask, NewUser};
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
-    // redundant pool; ignores the Result<PgPool> type error that db.connect() has at the moment
-    let pool = sqlx::PgPool::connect("postgres://root:root@localhost:5432/postgres").await?;
+    let connection = connect().await.unwrap();
 
     println!("====================== INITIALIZING DB ======================");
-    initalize_db(&pool).await?;
+    initalize_db(&connection).await?;
 
     println!("====================== CREATING USER ======================");
-    let user = User {
-        id: Uuid::new_v4(),
+    let user = NewUser {
         username: String::from("Kam"),
         password_hashed: String::from("kam123")
     };
     println!("Use created successfully");
     println!("====================== WRITING USER ======================");
-    write_user(&pool, &user).await?;
-
-    println!("===================== FINDING USER_ID =====================");
-    let user_id = get_user_uuid(&pool, &user.username).await?;
+    let user_id: Uuid = write_user(&connection, &user).await?;
 
     println!("====================== QUERYING USER ======================");
-    query_user(&pool, &user_id).await?;
-    
+    query_user(&connection, &user_id).await?;
+
+    println!("====================== CREATING TASK ======================");
+    let task = NewTask {
+        user_id: user_id,
+        task_title: String::from("Temp Title"),
+        task_description: None,
+        task_status: String::from("in progress")
+    };
+
+    println!("====================== WRITING TASK ======================");
+    let task_id = write_task(&connection, &task).await?;
+    println!("{}", task_id);
+
+    println!("====================== QUERYING TASK ======================");
+    query_task(&connection, &task_id).await?;
+
+    println!("====================== GETTING ALL TASKS FROM USER ======================");
+    get_tasks(&connection, &user_id).await?;
+
     Ok(())
 }

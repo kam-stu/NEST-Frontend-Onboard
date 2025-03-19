@@ -1,8 +1,8 @@
-use sqlx::{Executor, FromRow, PgPool};
+use sqlx::{pool, Executor, FromRow, PgPool};
 use std::fs;
 use tokio::time::{timeout, Duration};
 use sqlx::types::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 
 #[derive(FromRow, Debug)]
 pub struct User {
@@ -11,27 +11,40 @@ pub struct User {
     pub password_hashed: String,
 }
 
+#[derive(Debug, FromRow)]
 pub struct Task {
-    pub id: Uuid,                     
-    pub user_id: Uuid,                 
-    pub title: String,                 
-    pub description: Option<String>,   
-    pub creation_time: DateTime<Utc>,  
-    pub status: String,                
-    pub completion_time: Option<DateTime<Utc>>,
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub task_title: String,
+    pub task_description: Option<String>,
+    pub creation_time: NaiveDateTime,
+    pub task_status: String,
+    pub completion_time: Option<NaiveDateTime>,
+}
+
+#[derive(Debug)]
+pub struct NewUser {
+    pub username: String,
+    pub password_hashed: String,
+}
+
+#[derive(Debug)]
+pub struct NewTask {
+    pub user_id: Uuid,
+    pub task_title: String,
+    pub task_description: Option<String>,
+    pub task_status: String,
 }
 
 
 // this will later be moved to backend; just wanted to test the connection
 // without setting up the backend folder
-#[tokio::main]
 pub async fn connect() -> Result<PgPool, sqlx::Error> {
     let url: &str = "postgres://root:root@localhost:5432/postgres";
     println!("Running...");
 
-    // connection to database
-    // if fails to connect within 5 seconds, it stops and sends a connection timeout error
-    // otherwise, establishes connection properly or sends a different error
+    // connects to the databse.  It tires to connect for 5 seconds and if there's an error
+    //  or no response, it throws the error (or conenction timeout) and exits the rest of the program
     let pool = match timeout(Duration::from_secs(5), async { PgPool::connect(url).await }).await {
         Ok(Ok(pool)) => {
             println!("Connection established!");
@@ -39,11 +52,11 @@ pub async fn connect() -> Result<PgPool, sqlx::Error> {
         }
         Ok(Err(e)) => {
             eprintln!("Connection failed: {:?}", e);
-            return Err(e);
+            std::process::exit(1);
         }
         Err(_) => {
             eprintln!("Connection Timeout.");
-            return Err(sqlx::Error::Configuration("Connection timeout".into()));
+            std::process::exit(1);
         }
     };
     Ok(pool)
@@ -74,19 +87,32 @@ pub async fn initalize_db(pool: &PgPool) -> Result<(), sqlx::Error> {
     }
 }
 
-// inserts a new user into the database and returns their uuid
-pub async fn write_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> {
-    sqlx::query(
-        "INSERT INTO users (id, username, password_hashed)
-        VALUES ($1, $2, $3)")
-        .bind(&user.id)
+// inserts a new user into the database
+pub async fn write_user(pool: &PgPool, user: &NewUser) -> Result<Uuid, sqlx::Error> {
+    let result: (Uuid,) = sqlx::query_as(
+        "INSERT INTO users (username, password_hashed)
+        VALUES ($1, $2)
+        RETURNING id")
         .bind(&user.username)
         .bind(&user.password_hashed)
-        .execute(pool).await?;
+        .fetch_one(pool)
+        .await?;
 
     println!("User added successfully");
 
-    Ok(())
+    Ok(result.0)
+}
+
+// checks if a username already exists by counting all users with a specific username
+// returns true if the count is greather than 0 (someone already has that username)
+pub async fn username_exists(pool: &PgPool, username: &String) -> bool {
+    let exists: (i8, ) = sqlx::query_as(
+        "SELECT COUNT(*) FROM users WHERE username=$1")
+        .bind(&username)
+        .fetch_one(pool)
+        .await.unwrap();
+
+    exists.0 > 0
 }
 
 // gets a user from the databse from their ID and prints the values associated with that user 
@@ -101,6 +127,7 @@ pub async fn query_user(pool: &PgPool, user_id: &Uuid) -> Result<(), sqlx::Error
     Ok(())
 }
 
+/* 
 pub async fn get_user_uuid(pool: &PgPool, username: &String) -> Result<Uuid, sqlx::Error> {
     let result: (Uuid,) = sqlx::query_as(
         "SELECT id FROM users WHERE username=$1")
@@ -111,17 +138,49 @@ pub async fn get_user_uuid(pool: &PgPool, username: &String) -> Result<Uuid, sql
         println!("User ID found successfully!");
     Ok(result.0)
 }
+*/
 
-/* 
+// sets a task into the database -> returns the id of that task
+pub async fn write_task(pool: &PgPool, task: &NewTask) -> Result<Uuid, sqlx::Error> {
+    let result : (Uuid,)= sqlx::query_as(
+        "INSERT INTO tasks (user_id, task_title, task_description, task_status)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id")
+        .bind(&task.user_id)
+        .bind(&task.task_title)
+        .bind(&task.task_description)
+        .bind(&task.task_status)
+        .fetch_one(pool)
+        .await?;
 
-// gets a task and user, inserts the task into the database and sets its owner as the user 
-// returns the task's uuid
-pub async fn write_task(pool: &PgPool, task: &Task, user_id: Uuid) -> Result<Uuid, sqlx::Error> {}
+    Ok(result.0)
+}
+
+// gets a task based on its id
+pub async fn query_task(pool: &PgPool, task_id: &Uuid) -> Result<Task, sqlx::Error> {
+    let result: Task = sqlx::query_as::<_, Task>(
+        "SELECT * FROM tasks WHERE id=$1")
+        .bind(&task_id)
+        .fetch_one(pool)
+        .await?;
+    
+    println!("The task is: {:?}", result);
+
+    Ok(result)    
+}
+
 
 // returns a vector of the tasks associated with a user 
-pub async fn get_task(pool: &PgPool, user_id: Uuid) -> Result<Vec<Task>, sqlx::Error> {}
+pub async fn get_tasks(pool: &PgPool, user_id: &Uuid) -> Result<Vec<Task>, sqlx::Error> {
+    let result = sqlx::query_as::<_, Task>(
+        "SELECT * FROM tasks WHERE user_id=$1").
+        bind(&user_id)
+        .fetch_all(pool)
+        .await?;
 
-// sets the tasks owner to the user's UUID
-pub async fn set_task_owner(pool: &PgPool, task_id: Uuid, user_id: Uuid) -> Result<(), sqlx::Error> {}
+    println!("All tasks from {:?}: {:?}", query_user(pool, &user_id).await?, result);
 
-*/
+    Ok(result)
+}
+
+
