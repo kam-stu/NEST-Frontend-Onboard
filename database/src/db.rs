@@ -183,4 +183,35 @@ pub async fn get_tasks(pool: &PgPool, user_id: &Uuid) -> Result<Vec<Task>, sqlx:
     Ok(result)
 }
 
+// updates the task of a program 
+pub async fn edit_task(pool: &PgPool, task: &Task) -> Result<(), sqlx::Error>{
+    sqlx::query_as::<_, Task>(
+        "UPDATE tasks
+        SET task_title=$1, task_description=$2, task_status=$3
+        WHERE id=$4")
+        .bind(&task.task_title)
+        .bind(&task.task_description)
+        .bind(&task.task_status)
+        .bind(&task.id)
+        .fetch_one(pool)
+        .await?;
+
+    Ok(())
+}
+
+// updates the username and/or password of a user
+pub async fn edit_user(pool: &PgPool, user: &User) -> Result<(), sqlx::Error> {
+    sqlx::query_as::<_, User>(
+        "UPDATE users
+        SET username=$1, password_hashed=$2
+        WHERE id=$3")
+        .bind(&user.username)
+        .bind(&user.password_hashed)
+        .bind(&user.id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(())
+}
+
 

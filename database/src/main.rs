@@ -29,12 +29,21 @@ async fn main() -> Result<(), sqlx::Error> {
         task_status: String::from("in progress")
     };
 
+    let task2 = NewTask {
+        user_id: user_id,
+        task_title: String::from("Another title"),
+        task_description: Some(String::from("Test desc")),
+        task_status: String::from("in progress")
+    };
+
     println!("====================== WRITING TASK ======================");
     let task_id = write_task(&connection, &task).await?;
     println!("{}", task_id);
+    let task2_id = write_task(&connection, &task2).await?;
 
     println!("====================== QUERYING TASK ======================");
     query_task(&connection, &task_id).await?;
+    query_task(&connection, &task2_id).await?;
 
     println!("====================== GETTING ALL TASKS FROM USER ======================");
     get_tasks(&connection, &user_id).await?;
